@@ -1,127 +1,38 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { readWorkspace, saveChanges, saveErrorMessage } from "./questionRepository.js";
+import { supabase } from "../../lib/supabase.js";
 import { validateBackup } from "./questionModel.js";
-import { buildSaveRequest, sameWorkspace as same } from "./workspaceChanges.js";
 
-function readBrowserBackup(userId) {
-  try {
-    const raw = localStorage.getItem(`dsa-space-v1:${userId}`);
-    const data = raw ? JSON.parse(raw) : null;
-    return validateBackup(data) ? data : null;
-  } catch {
-    return null;
+export async function readWorkspace(userId) {
+  const { data, error } = await supabase.rpc("read_question_workspace", {
+    p_user_id: userId,
+  });
+
+  if (error) throw error;
+
+  if (!data || !Number.isSafeInteger(data.revision) || !validateBackup(data.data)) {
+    throw new Error(
+      "The saved workspace could not be read. Your cloud data has not been replaced."
+    );
   }
+
+  return data;
 }
 
-export function useQuestionWorkspace(userId) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [saveError, setSaveError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [reloadCount, setReloadCount] = useState(0);
-  const [browserBackup] = useState(() => readBrowserBackup(userId));
+export async function saveChanges(request) {
+  const { data, error } = await supabase.rpc("save_question_changes", request);
 
-  const active = useRef(false);
-  const confirmed = useRef(null);
-  const latest = useRef(null);
-  const pendingRequest = useRef(null);
-  const inFlight = useRef(null);
+  if (error) throw error;
 
-  useEffect(() => {
-    let cancelled = false;
-    active.current = true;
-    setLoading(true);
-    setLoadError("");
-
-    readWorkspace(userId).then((workspace) => {
-      if (cancelled) return;
-      confirmed.current = workspace;
-      latest.current = workspace.data;
-      pendingRequest.current = null;
-      setData(workspace.data);
-      setSaveError("");
-    }).catch(() => {
-      if (!cancelled) {
-        setLoadError("Could not open your cloud workspace. Please retry or contact the administrator.");
-      }
-    }).finally(() => {
-      if (!cancelled) setLoading(false);
-    });
-
-    return () => {
-      cancelled = true;
-      active.current = false;
-    };
-  }, [userId, reloadCount]);
-
-  const flush = useCallback(() => {
-    if (inFlight.current) return inFlight.current;
-
-    inFlight.current = (async () => {
-      try {
-        while (active.current && confirmed.current && latest.current &&
-          (pendingRequest.current || !same(latest.current, confirmed.current.data))) {
-          setSaving(true);
-          const snapshot = latest.current;
-          if (!validateBackup(snapshot)) throw new Error("Invalid question data");
-
-          // Retry the same request first if its previous response was lost.
-          const pending = pendingRequest.current || {
-            snapshot,
-            request: buildSaveRequest(userId, confirmed.current, snapshot, crypto.randomUUID()),
-          };
-          pendingRequest.current = pending;
-          const revision = await saveChanges(pending.request);
-          if (!active.current) return;
-
-          confirmed.current = { revision, data: pending.snapshot };
-          pendingRequest.current = null;
-          setSaveError("");
-          // Changes made during this request are handled by the next iteration.
-        }
-      } catch (error) {
-        if (active.current) setSaveError(saveErrorMessage(error));
-        throw error;
-      } finally {
-        if (active.current) setSaving(false);
-      }
-    })().finally(() => {
-      inFlight.current = null;
-    });
-
-    return inFlight.current;
-  }, [userId]);
-
-  useEffect(() => {
-    if (!data || loading || loadError) return;
-    latest.current = data;
-    if (same(data, confirmed.current?.data) && !pendingRequest.current) return;
-    const timer = setTimeout(() => { flush().catch(() => {}); }, 450);
-    return () => clearTimeout(timer);
-  }, [data, loading, loadError, flush]);
-
-  const hasUnsavedChanges = Boolean(data && confirmed.current &&
-    (pendingRequest.current || !same(data, confirmed.current.data)));
-
-  useEffect(() => {
-    if (!hasUnsavedChanges) return;
-    const warn = (event) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [hasUnsavedChanges]);
-
-  function reloadWorkspace() {
-    if (inFlight.current) return;
-    setReloadCount((value) => value + 1);
+  if (!Number.isSafeInteger(data)) {
+    throw new Error("Could not confirm the cloud save.");
   }
 
-  return {
-    data, setData, loading, loadError, saveError, saving, hasUnsavedChanges,
-    browserBackup, flush, reloadWorkspace,
-    retrySave: () => flush().catch(() => {}),
-  };
+  return data;
+}
+
+export function saveErrorMessage(error) {
+  if (error?.code === "40001") {
+    return "This workspace changed on another device. Export your unsaved changes, then reload the cloud version before editing again.";
+  }
+
+  return "Your changes have not been saved to Supabase. Check your connection and retry, or export a backup.";
 }
