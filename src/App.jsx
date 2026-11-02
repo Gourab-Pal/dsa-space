@@ -35,19 +35,10 @@ import {
     Square,
 } from "@phosphor-icons/react";
 
-import {
-    TOPICS,
-    createSeed,
-    today,
-    shiftDay,
-    formatDay,
-    safeUrl,
-    lastAttempt,
-    streak,
-    validateBackup,
-} from "./data.js";
+import { TOPICS } from "./config/topics.js";
+import { today, shiftDay, formatDay } from "./lib/dates.js";
+import { safeUrl, lastAttempt, streak, validateBackup } from "./features/questions/questionModel.js";
 
-const STORAGE_KEY = "dsa-space-v1";
 const PAGE_SIZE = 8;
 
 const TOPIC_ICONS = [
@@ -67,35 +58,6 @@ const STATUSES = [
     "Solved",
     "Revisit",
 ];
-
-function loadWorkspace(storageKey) {
-    try {
-        const raw = localStorage.getItem(storageKey);
-
-        if (!raw) {
-            return {
-                data: createSeed(),
-                blocked: false,
-            };
-        }
-
-        const data = JSON.parse(raw);
-
-        if (!validateBackup(data)) {
-            throw new Error("Invalid saved data");
-        }
-
-        return {
-            data,
-            blocked: false,
-        };
-    } catch {
-        return {
-            data: createSeed(),
-            blocked: true,
-        };
-    }
-}
 
 function downloadBackup(data) {
     const blob = new Blob(
@@ -481,13 +443,11 @@ function Editor({
     );
 }
 
-export function App({ onSignOut, storageKey = STORAGE_KEY }) {
-    const [boot] = useState(() => loadWorkspace(storageKey));
-    const [data, setData] = useState(boot.data);
-    const [blocked, setBlocked] = useState(
-        boot.blocked
-    );
-    const [saveError, setSaveError] = useState("");
+export function App({ onSignOut, workspace }) {
+    const {
+        data, setData, saveError, saving, hasUnsavedChanges,
+        browserBackup, retrySave, reloadWorkspace,
+    } = workspace;
 
     const [view, setView] = useState("Questions");
     const [topic, setTopic] = useState(
@@ -509,7 +469,7 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
     const [page, setPage] = useState(1);
 
     const [selectedId, setSelectedId] = useState(
-        "seed-0-0"
+        data.questions[0]?.id || null
     );
     const [detailTab, setDetailTab] = useState(
         "Notes"
@@ -527,8 +487,8 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
         setSigningOut(true);
         try {
             await onSignOut();
-        } catch {
-            setToast("Could not sign out. Check your connection and try again.");
+        } catch (error) {
+            setToast(error.message || "Could not sign out. Check your connection and try again.");
         } finally {
             setSigningOut(false);
         }
@@ -576,24 +536,6 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
                 question.status === "Solved"
         ).length,
     }));
-
-    useEffect(() => {
-        if (blocked) {
-            return;
-        }
-
-        try {
-            localStorage.setItem(
-                storageKey,
-                JSON.stringify(data)
-            );
-            setSaveError("");
-        } catch {
-            setSaveError(
-                "Browser storage is full or unavailable. Export a backup to keep your changes."
-            );
-        }
-    }, [data, blocked, storageKey]);
 
     useEffect(() => {
         setPage(1);
@@ -860,7 +802,7 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
         setToast(
             modal.type === "practice"
                 ? "Practice logged. Keep going!"
-                : "Changes saved."
+                : "Changes updated."
         );
 
         setModal(null);
@@ -898,19 +840,16 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
             }));
         }
 
-        if (
-            modal.type === "import" ||
-            modal.type === "new"
-        ) {
-            setData(
-                modal.type === "import"
-                    ? modal.data
-                    : createSeed()
-            );
-
-            setBlocked(false);
+        if (modal.type === "import") {
+            setData(modal.data);
             setSelectedId(null);
             clearFilters();
+        }
+
+        if (modal.type === "reload") {
+            reloadWorkspace();
+            setModal(null);
+            return;
         }
 
         setModal(null);
@@ -960,7 +899,7 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
             delete: "Delete question?",
             reset: "Reset practice progress?",
             import: "Import backup?",
-            new: "Start a new workspace?",
+            reload: "Load the cloud version?",
         }[modal.type]
         : "";
 
@@ -975,9 +914,9 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
     } else if (modal?.type === "import") {
         confirmationText =
             `Replace this workspace with ${modal.data.questions.length} questions from the backup? Export your current data first if needed.`;
-    } else if (modal?.type === "new") {
+    } else if (modal?.type === "reload") {
         confirmationText =
-            "Replace unreadable saved data with a new sample library? This cannot recover the previous data.";
+            "Discard your unsaved changes and load the latest cloud version? Export a backup first if you want to keep your changes.";
     }
 
     const listTabs =
@@ -1155,16 +1094,14 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
 
                         <span
                             className={
-                                saveError || blocked
+                                saveError || saving || hasUnsavedChanges
                                     ? "save-dot warning"
                                     : "save-dot"
                             }
                         />
 
-                        <span>
-              {saveError || blocked
-                  ? "Backup needed"
-                  : "Local data saved"}
+                        <span aria-live="polite">
+              {saveError ? "Save failed" : saving || hasUnsavedChanges ? "Saving…" : "Cloud saved"}
             </span>
                     </div>
                 </div>
@@ -1232,15 +1169,15 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
                     )}
                 </header>
 
-                {(saveError || blocked) && (
-                    <p
-                        className="storage-warning"
-                        role="alert"
-                    >
-                        {blocked
-                            ? "Saved data could not be read and has not been overwritten. Use Settings to import a backup or start a new workspace."
-                            : saveError}
-                    </p>
+                {saveError && (
+                    <div className="storage-warning" role="alert">
+                        <p>{saveError}</p>
+                        <div className="cloud-actions">
+                            <button className="secondary-button" onClick={retrySave} disabled={saving}>Retry save</button>
+                            <button className="secondary-button" onClick={() => downloadBackup(data)}>Export backup</button>
+                            <button className="secondary-button" onClick={() => setModal({ type: "reload" })} disabled={saving}>Load cloud version</button>
+                        </div>
+                    </div>
                 )}
 
                 {view !== "Settings" && (
@@ -1905,29 +1842,14 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
                             </button>
                         </div>
 
-                        {blocked && (
+                        {browserBackup && (
                             <div className="setting-row">
                                 <div>
-                                    <h2>
-                                        Resolve unreadable
-                                        data
-                                    </h2>
-                                    <p>
-                                        Replace the unreadable
-                                        saved data with a new
-                                        sample library.
-                                    </p>
+                                    <h2>Import previous browser data</h2>
+                                    <p>{browserBackup.questions.length} questions saved in this browser before cloud saving. Review before replacing your cloud workspace.</p>
                                 </div>
-
-                                <button
-                                    className="secondary-button"
-                                    onClick={() =>
-                                        setModal({
-                                            type: "new",
-                                        })
-                                    }
-                                >
-                                    Start new workspace
+                                <button className="secondary-button" onClick={() => setModal({ type: "import", data: browserBackup })}>
+                                    Import browser data
                                 </button>
                             </div>
                         )}
@@ -1936,13 +1858,9 @@ export function App({ onSignOut, storageKey = STORAGE_KEY }) {
                             <Database size={20} />
 
                             <span>
-                Data stays in this browser
-                on this device. Export a
-                backup to move to another
-                PC. The first launch has
-                sample practice history;
-                reset progress to start
-                your own preparation.
+                Questions, notes and practice history are saved to your Supabase account.
+                Sign in on another device to load your workspace.
+                JSON backups are available for export and import.
               </span>
                         </p>
                     </section>

@@ -5,7 +5,8 @@ import { AuthGate, AuthLoading } from "./auth/AuthGate.jsx";
 import "./dashboard.css";
 
 const Dashboard = lazy(() =>
-  import("./App.jsx").then(({ App }) => ({ default: App }))
+  import("./features/questions/QuestionWorkspace.jsx")
+    .then(({ QuestionWorkspace }) => ({ default: QuestionWorkspace }))
 );
 
 createRoot(document.getElementById("root")).render(
@@ -15,7 +16,7 @@ createRoot(document.getElementById("root")).render(
         <Suspense fallback={<AuthLoading />}>
           <Dashboard
             key={user.id}
-            storageKey={`dsa-space-v1:${user.id}`}
+            user={user}
             onSignOut={signOut}
           />
         </Suspense>
