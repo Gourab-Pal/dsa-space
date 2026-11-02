@@ -33,11 +33,15 @@ import {
     List,
     CheckSquare,
     Square,
+    Books,
 } from "@phosphor-icons/react";
 
-import { TOPICS } from "./config/topics.js";
+import { TOPICS, DIFFICULTIES } from "./config/topics.js";
 import { today, shiftDay, formatDay } from "./lib/dates.js";
 import { safeUrl, lastAttempt, streak, validateBackup } from "./features/questions/questionModel.js";
+
+import { Catalog } from "./features/catalog/Catalog.jsx";
+import { addCatalogQuestions, LIBRARY_LIMIT } from "./features/catalog/catalogModel.js";
 
 const PAGE_SIZE = 8;
 
@@ -256,7 +260,7 @@ function Editor({
                                     question?.difficulty || "Easy"
                                 }
                             >
-                                {["Easy", "Medium", "Hard"].map(
+                                {DIFFICULTIES.map(
                                     (item) => (
                                         <option key={item}>{item}</option>
                                     )
@@ -524,7 +528,7 @@ export function App({ onSignOut, workspace }) {
 
     const topics = TOPICS.map((name, index) => ({
         name,
-        Icon: TOPIC_ICONS[index],
+        Icon: TOPIC_ICONS[index] || Stack,
 
         total: questions.filter(
             (question) => question.topic === name
@@ -694,6 +698,7 @@ export function App({ onSignOut, workspace }) {
                 "Easy",
                 "Medium",
                 "Hard",
+                "Unrated",
             ];
 
             items = [...items].sort(
@@ -773,6 +778,10 @@ export function App({ onSignOut, workspace }) {
         } else if (question) {
             patchQuestion(question.id, values);
         } else {
+            if (questions.length >= LIBRARY_LIMIT) {
+                setToast("Your library is full. Remove questions before adding more.");
+                return;
+            }
             const added = {
                 id: crypto.randomUUID(),
                 notes: "",
@@ -968,6 +977,7 @@ export function App({ onSignOut, workspace }) {
                 >
                     {[
                         [FileText, "Questions"],
+                        [Books, "Catalog"],
                         [CalendarBlank, "Today"],
                         [ChartBar, "Progress"],
                     ].map(([Icon, name]) => (
@@ -983,7 +993,7 @@ export function App({ onSignOut, workspace }) {
                             }
                         >
                             <Icon size={23} />
-                            {name}
+                            {name === "Questions" ? "My Questions" : name}
                         </button>
                     ))}
                 </nav>
@@ -991,7 +1001,7 @@ export function App({ onSignOut, workspace }) {
                 <div className="topics-heading">
                     <span>YOUR TOPICS</span>
                     <span>
-            {TOPICS.length} topics
+            {topics.filter((item) => item.total > 0).length} topics
           </span>
                 </div>
 
@@ -1029,7 +1039,7 @@ export function App({ onSignOut, workspace }) {
             </span>
                     </button>
 
-                    {topics.map(
+                    {topics.filter((item) => item.total > 0).map(
                         ({
                              name,
                              Icon,
@@ -1140,6 +1150,8 @@ export function App({ onSignOut, workspace }) {
                                     : topic
                                 : view === "Today"
                                     ? "Your practice today"
+                                    : view === "Catalog"
+                                        ? "Find your next question"
                                     : view === "Progress"
                                         ? "Your progress"
                                         : "Workspace settings"}
@@ -1148,6 +1160,8 @@ export function App({ onSignOut, workspace }) {
                         <p>
                             {view === "Today"
                                 ? `${doneToday} / ${data.dailyGoal} questions practiced today.`
+                                : view === "Catalog"
+                                    ? "Explore the catalog. Pick questions. Make them yours."
                                 : view === "Settings"
                                     ? "Your preparation, your data."
                                     : "A little practice, every day."}
@@ -1180,7 +1194,7 @@ export function App({ onSignOut, workspace }) {
                     </div>
                 )}
 
-                {view !== "Settings" && (
+                {view !== "Settings" && view !== "Catalog" && (
                     <section
                         className="metrics"
                         aria-label="Preparation statistics"
@@ -1224,6 +1238,10 @@ export function App({ onSignOut, workspace }) {
                     </section>
                 )}
 
+                {view === "Catalog" && <Catalog questions={questions} addQuestions={(items) => {
+                    setData((previous) => addCatalogQuestions(previous, items).data);
+                }} openLibrary={() => navigate("Questions")} />}
+
                 {showLibrary && (
                     <>
                         <div className="search-toolbar">
@@ -1258,6 +1276,7 @@ export function App({ onSignOut, workspace }) {
                                     "Easy",
                                     "Medium",
                                     "Hard",
+                                    "Unrated",
                                 ].map((item) => (
                                     <option key={item}>
                                         {item}
