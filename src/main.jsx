@@ -1,22 +1,25 @@
-import React, { useState } from "react";
+import React, { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 
-import { App } from "./App.jsx";
-import { Login } from "./Login.jsx";
+import { AuthGate, AuthLoading } from "./auth/AuthGate.jsx";
 import "./dashboard.css";
 
-function Root() {
-  const [demoUser, setDemoUser] = useState(null);
-
-  if (!demoUser) {
-    return <Login onContinue={setDemoUser} />;
-  }
-
-  return <App onSignOut={() => setDemoUser(null)} />;
-}
+const Dashboard = lazy(() =>
+  import("./App.jsx").then(({ App }) => ({ default: App }))
+);
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <Root />
+    <AuthGate>
+      {({ user, signOut }) => (
+        <Suspense fallback={<AuthLoading />}>
+          <Dashboard
+            key={user.id}
+            storageKey={`dsa-space-v1:${user.id}`}
+            onSignOut={signOut}
+          />
+        </Suspense>
+      )}
+    </AuthGate>
   </React.StrictMode>
 );

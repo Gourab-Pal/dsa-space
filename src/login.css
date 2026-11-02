@@ -151,6 +151,21 @@
   line-height: 1.6;
 }
 
+.login-error {
+  padding: 12px 14px;
+  border: 1px solid #854044;
+  border-radius: 6px;
+  background: #321c26;
+  color: #ffb4b4;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.login-submit:disabled {
+  cursor: wait;
+}
+
 @media (max-width: 480px) {
   .login-page {
     padding: 24px 16px;

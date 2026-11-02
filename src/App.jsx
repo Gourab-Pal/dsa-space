@@ -68,9 +68,9 @@ const STATUSES = [
     "Revisit",
 ];
 
-function loadWorkspace() {
+function loadWorkspace(storageKey) {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(storageKey);
 
         if (!raw) {
             return {
@@ -481,8 +481,8 @@ function Editor({
     );
 }
 
-export function App({ onSignOut }) {
-    const [boot] = useState(loadWorkspace);
+export function App({ onSignOut, storageKey = STORAGE_KEY }) {
+    const [boot] = useState(() => loadWorkspace(storageKey));
     const [data, setData] = useState(boot.data);
     const [blocked, setBlocked] = useState(
         boot.blocked
@@ -518,8 +518,21 @@ export function App({ onSignOut }) {
         useState(false);
     const [modal, setModal] = useState(null);
     const [toast, setToast] = useState("");
+    const [signingOut, setSigningOut] = useState(false);
 
     const fileRef = useRef(null);
+
+    async function handleSignOut() {
+        if (signingOut) return;
+        setSigningOut(true);
+        try {
+            await onSignOut();
+        } catch {
+            setToast("Could not sign out. Check your connection and try again.");
+        } finally {
+            setSigningOut(false);
+        }
+    }
 
     const { questions } = data;
 
@@ -571,7 +584,7 @@ export function App({ onSignOut }) {
 
         try {
             localStorage.setItem(
-                STORAGE_KEY,
+                storageKey,
                 JSON.stringify(data)
             );
             setSaveError("");
@@ -580,7 +593,7 @@ export function App({ onSignOut }) {
                 "Browser storage is full or unavailable. Export a backup to keep your changes."
             );
         }
-    }, [data, blocked]);
+    }, [data, blocked, storageKey]);
 
     useEffect(() => {
         setPage(1);
@@ -1118,9 +1131,9 @@ export function App({ onSignOut }) {
 
                 <div className="sidebar-bottom">
                     {onSignOut && (
-                        <button className="nav-item" onClick={onSignOut}>
+                        <button className="nav-item" onClick={handleSignOut} disabled={signingOut}>
                             <ArrowSquareOut size={23} />
-                            Sign out
+                            {signingOut ? "Signing out…" : "Sign out"}
                         </button>
                     )}
                     <button

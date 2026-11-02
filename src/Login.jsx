@@ -2,18 +2,38 @@ import { useState } from "react";
 import { ArrowRight, Eye, EyeSlash } from "@phosphor-icons/react";
 import "./login.css";
 
-export function Login({ onContinue }) {
+export function Login({ onSignIn, configurationError = "", initialError = "" }) {
   const [showPassword, setShowPassword] = useState(false);
   const [savePassword, setSavePassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(initialError);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    if (submitting || configurationError) return;
 
     const form = event.currentTarget;
     const email = form.elements.namedItem("email").value.trim();
+    const password = form.elements.namedItem("password").value;
 
-    // Preview only. Never persist the password in app storage.
-    onContinue({ email });
+    setError("");
+    setSubmitting(true);
+
+    try {
+      await onSignIn(email, password);
+    } catch (failure) {
+      if (failure.code === "invalid_credentials") {
+        setError("The email or password is incorrect.");
+      } else if (failure.code === "email_not_confirmed") {
+        setError("Please confirm your email address before signing in.");
+      } else if (failure.status === 429) {
+        setError("Too many attempts. Please wait a little and try again.");
+      } else {
+        setError("Could not sign in. Check your connection and try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -34,6 +54,7 @@ export function Login({ onContinue }) {
           action="/"
           autoComplete={savePassword ? "on" : "off"}
           onSubmit={handleSubmit}
+          aria-busy={submitting}
         >
           <div className="login-field">
             <label htmlFor="login-email">Email address</label>
@@ -48,6 +69,7 @@ export function Login({ onContinue }) {
               spellCheck={false}
               maxLength={254}
               required
+              readOnly={submitting}
             />
           </div>
 
@@ -63,6 +85,7 @@ export function Login({ onContinue }) {
                 autoComplete={savePassword ? "current-password" : "off"}
                 spellCheck={false}
                 required
+                readOnly={submitting}
               />
 
               <button
@@ -88,6 +111,7 @@ export function Login({ onContinue }) {
                 name="savePassword"
                 type="checkbox"
                 checked={savePassword}
+                disabled={submitting}
                 onChange={(event) => setSavePassword(event.target.checked)}
                 aria-describedby="login-save-help"
               />
@@ -99,14 +123,24 @@ export function Login({ onContinue }) {
             </p>
           </div>
 
-          <button className="login-submit" type="submit">
-            Sign in
-            <ArrowRight size={19} weight="bold" />
+          {(configurationError || error) && (
+            <p className="login-error" role="alert">
+              {configurationError || error}
+            </p>
+          )}
+
+          <button
+            className="login-submit"
+            type="submit"
+            disabled={submitting || Boolean(configurationError)}
+          >
+            {submitting ? "Signing in…" : "Sign in"}
+            {!submitting && <ArrowRight size={19} weight="bold" />}
           </button>
         </form>
 
         <p className="login-preview">
-          Preview mode. Use any valid email and a password to continue.
+          Sign in with the account created for you by the administrator.
         </p>
       </section>
     </main>
