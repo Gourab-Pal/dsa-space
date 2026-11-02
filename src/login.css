@@ -1,0 +1,162 @@
+.login-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  background: var(--sidebar);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 36px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.login-brand {
+  margin-bottom: 40px;
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: -1px;
+}
+
+.login-brand span {
+  color: var(--accent);
+}
+
+.login-heading h1 {
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.7px;
+}
+
+.login-heading p {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.login-form {
+  display: grid;
+  gap: 22px;
+  margin-top: 30px;
+}
+
+.login-field {
+  display: grid;
+  gap: 9px;
+}
+
+.login-field label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.login-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: #f1f5f9;
+  font-size: 15px;
+}
+
+.login-field input::placeholder {
+  color: #91a5bd;
+  opacity: 1;
+}
+
+.login-field input:focus-visible {
+  border-color: var(--accent);
+}
+
+.login-password {
+  position: relative;
+}
+
+.login-password input {
+  padding-right: 50px;
+}
+
+.login-reveal {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  color: var(--muted);
+}
+
+.login-reveal:hover {
+  color: #fff;
+  background: #1e3e62;
+}
+
+.login-save label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.login-save input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.login-save p {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.login-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #080d14;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.login-submit:hover {
+  background: #ff7c26;
+}
+
+.login-preview {
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    padding: 24px 16px;
+  }
+
+  .login-card {
+    padding: 28px 22px;
+  }
+}

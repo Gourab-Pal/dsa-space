@@ -481,7 +481,7 @@ function Editor({
     );
 }
 
-export function App() {
+export function App({ onSignOut }) {
     const [boot] = useState(loadWorkspace);
     const [data, setData] = useState(boot.data);
     const [blocked, setBlocked] = useState(
@@ -1117,6 +1117,12 @@ export function App() {
                 </nav>
 
                 <div className="sidebar-bottom">
+                    {onSignOut && (
+                        <button className="nav-item" onClick={onSignOut}>
+                            <ArrowSquareOut size={23} />
+                            Sign out
+                        </button>
+                    )}
                     <button
                         className={`nav-item ${
                             view === "Settings"
