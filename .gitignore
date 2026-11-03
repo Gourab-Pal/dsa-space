@@ -3,3 +3,7 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Generated admin batches and local shared-catalog exports
+catalog-import-sql/
+catalog-backup*.json

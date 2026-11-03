@@ -104,9 +104,11 @@ export function Catalog({
       {showCoverage && (
         <div className="catalog-coverage">
           <p>
-            Coverage is a snapshot of the sources listed below. It does not
-            include every question on every platform. Individual links may
-            change.
+            A curated library of independently authored interview exercises.
+            Descriptions, examples, hints and approaches are saved here.
+            Start with a focused collection or browse the full library.
+            The first release has 50 complete exercises; the broader catalog
+            will grow through reviewed additions. Related platform links may change.
           </p>
           {catalog.meta.sources.map((source) => (
             <div key={source.id}>
@@ -134,7 +136,7 @@ export function Catalog({
           onClick={() => catalog.filter("collection", "")}
         >
           <strong>All questions</strong>
-          <span>Browse every source</span>
+          <span>All available questions</span>
         </button>
         {catalog.meta.collections.map((collection) => (
           <button
@@ -155,7 +157,7 @@ export function Catalog({
           <MagnifyingGlass size={19} />
           <input
             aria-label="Search catalog questions"
-            placeholder="Search questions or platform ID…"
+            placeholder="Search questions or patterns…"
             value={catalog.filters.query}
             maxLength={120}
             onChange={(e) => catalog.filter("query", e.target.value)}
@@ -306,7 +308,11 @@ export function Catalog({
                     </td>
                     <td>
                       <span className="catalog-platform">{q.platform}</span>
-                      <small>{q.source_id}</small>
+                      <small>
+                        {q.source_links?.length > 1
+                          ? `${q.source_links.length} practice links`
+                          : "Saved exercise"}
+                      </small>
                     </td>
                     <td>
                       <div className="catalog-row-actions">

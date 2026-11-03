@@ -80,6 +80,7 @@ export function validateBackup(data) {
         (isText(question.catalog_id) &&
           question.catalog_id.length > 0 &&
           question.catalog_id.length <= 200)) &&
+      (question.catalog_version == null || (Number.isSafeInteger(question.catalog_version) && question.catalog_version > 0)) &&
       isText(question.title) &&
       question.title.trim().length > 0 &&
       TOPICS.includes(question.topic) &&

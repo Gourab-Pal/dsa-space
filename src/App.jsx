@@ -40,6 +40,7 @@ import { TOPICS, DIFFICULTIES } from "./config/topics.js";
 import { today, shiftDay, formatDay } from "./lib/dates.js";
 import { safeUrl, lastAttempt, streak, validateBackup } from "./features/questions/questionModel.js";
 
+import { QuestionContent } from "./features/catalog/QuestionContent.jsx";
 import { Catalog } from "./features/catalog/Catalog.jsx";
 import { addCatalogQuestions, LIBRARY_LIMIT } from "./features/catalog/catalogModel.js";
 
@@ -905,7 +906,7 @@ export function App({ onSignOut, workspace }) {
                 : "Add question",
             notes: "Edit notes & solution",
             practice: "Log practice",
-            delete: "Delete question?",
+            delete: "Remove from My Questions?",
             reset: "Reset practice progress?",
             import: "Import backup?",
             reload: "Load the cloud version?",
@@ -916,7 +917,7 @@ export function App({ onSignOut, workspace }) {
 
     if (modal?.type === "delete") {
         confirmationText =
-            `Delete “${modal.question.title}” and its notes and attempts? Export a backup first if needed.`;
+            `Remove “${modal.question.title}” from your personal questions, including its notes and practice history?${modal.question.catalog_id ? " The catalog question stays available and can be added again." : ""} Export a backup first if you want to keep that history.`;
     } else if (modal?.type === "reset") {
         confirmationText =
             "Clear all practice logs, statuses, confidence, and revision dates? Questions, notes, solutions, and bookmarks stay.";
@@ -1946,6 +1947,15 @@ export function App({ onSignOut, workspace }) {
 
                             <button
                                 className="icon-button"
+                                aria-label="Remove from My Questions"
+                                title="Remove from My Questions"
+                                onClick={() => setModal({ type: "delete", question: selected })}
+                            >
+                                <Trash size={21} />
+                            </button>
+
+                            <button
+                                className="icon-button"
                                 aria-label="Close question details"
                                 onClick={() =>
                                     setSelectedId(null)
@@ -1972,6 +1982,7 @@ export function App({ onSignOut, workspace }) {
                         aria-label="Question detail tabs"
                     >
                         {[
+                            ...(selected.catalog_id ? ["Question"] : []),
                             "Overview",
                             "Notes",
                             "Attempts",
@@ -1997,6 +2008,11 @@ export function App({ onSignOut, workspace }) {
                     </div>
 
                     <div className="detail-content">
+                        {detailTab === "Question" && selected.catalog_id && (
+                            <QuestionContent key={selected.id} id={selected.catalog_id}
+                                version={selected.catalog_version}
+                                updateVersion={(version) => patchQuestion(selected.id, { catalog_version: version })} />
+                        )}
                         {detailTab === "Notes" && (
                             <>
                                 <div className="section-title">
@@ -2244,7 +2260,7 @@ export function App({ onSignOut, workspace }) {
                                     }
                                 >
                                     <Trash size={18} />
-                                    Delete question
+                                    Remove from My Questions
                                 </button>
                             </>
                         )}
@@ -2385,10 +2401,9 @@ export function App({ onSignOut, workspace }) {
                                         confirmChange
                                     }
                                 >
-                                    Confirm{" "}
-                                    {modal.type === "new"
-                                        ? "replacement"
-                                        : modal.type}
+                                    {modal.type === "delete"
+                                        ? "Remove question"
+                                        : `Confirm ${modal.type === "new" ? "replacement" : modal.type}`}
                                 </button>
                             </div>
                         </>

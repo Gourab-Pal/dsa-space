@@ -6,7 +6,7 @@ const INITIAL_FILTERS = {
   topic: "",
   platform: "",
   difficulty: "",
-  collection: "",
+  collection: "prep-essential",
 };
 
 export function useCatalog() {

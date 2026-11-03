@@ -34,5 +34,27 @@ export async function readCatalogPage(filters, page, signal) {
   ) {
     throw new Error("Invalid catalog response");
   }
+  return {
+    ...data,
+    questions: data.questions.map((question) => {
+      const preferred = question.source_links?.find(
+        (source) => source.platform === filters.platform,
+      );
+      return preferred
+        ? { ...question, platform: preferred.platform, url: preferred.url,
+            source_id: preferred.source_id, access: preferred.access }
+        : question;
+    }),
+  };
+}
+
+export async function readCatalogQuestion(id, version, signal) {
+  const { data, error } = await supabase.rpc("read_catalog_question", {
+    p_id: id, p_version: version || null,
+  }).abortSignal(signal);
+  if (error) throw error;
+  if (!data?.content || !Array.isArray(data.content.examples) || !Array.isArray(data.approaches)) {
+    throw new Error("Invalid stored content response");
+  }
   return data;
 }
