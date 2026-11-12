@@ -1,6 +1,9 @@
 // Independently written reference implementations for the 50 pilot exercises.
 // JSON inputs deliberately use arrays/edge lists instead of language-specific nodes.
+import { coreReference } from "./catalog-core-reference.mjs";
+
 export const reference = {
+  ...coreReference,
   'lc:1': ({values,target}) => { const seen=new Map(); for(let i=0;i<values.length;i++){if(seen.has(target-values[i]))return [seen.get(target-values[i]),i];seen.set(values[i],i);} return []; },
   'lc:242': ({first,second}) => {const c=new Map(); for(const x of first)c.set(x,(c.get(x)||0)+1);for(const x of second)c.set(x,(c.get(x)||0)-1);return [...c.values()].every(x=>x===0);},
   'lc:238': ({values}) => {const out=Array(values.length).fill(1);let p=1;for(let i=0;i<values.length;i++){out[i]=p;p*=values[i];}p=1;for(let i=values.length-1;i>=0;i--){out[i]*=p;p*=values[i];}return out;},

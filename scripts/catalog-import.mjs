@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
 import { validateCatalog } from './catalog-validate.mjs';
 
-export function importBatches(catalog, size=10) {
+export function importBatches(catalog, size=25) {
   const {questions,...manifest}=catalog;
   const batches=[];
   for(let i=0;i<questions.length;i+=size)batches.push({manifest,questions:questions.slice(i,i+size)});
@@ -51,7 +51,7 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
     validateCatalog(catalog);
     console.log(`Validated ${catalog.questions.length} complete questions.`);
     if(mode==='--sql'){
-      const dir=resolve(root,'catalog-import-sql');await mkdir(dir,{recursive:true});
+      const dir=resolve(root,'catalog-import-sql',catalog.release_id);await mkdir(dir,{recursive:true});
       const batches=importBatches(catalog);
       for(let i=0;i<batches.length;i++)await writeFile(resolve(dir,`${String(i+1).padStart(2,'0')}-batch.sql`),batchSql(batches[i]));
       await writeFile(resolve(dir,`${String(batches.length+1).padStart(2,'0')}-publish.sql`),publishSql(catalog.release_id));

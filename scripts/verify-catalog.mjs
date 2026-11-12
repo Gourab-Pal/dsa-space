@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { reference as solve } from './catalog-reference.mjs';
+import { verifyCore } from './verify-core-catalog.mjs';
 import { validateCatalog } from './catalog-validate.mjs';
 
 const data=JSON.parse(await readFile(new URL('../catalog/interview-pilot.json',import.meta.url),'utf8'));
@@ -44,3 +45,6 @@ check('lc:104',{tree:deep},10000);
 check('lc:98',{tree:deep},true);
 console.log(`PASS: ${counts.questions} questions, ${counts.examples} authored examples, ${counts.sourceLinks} unique practice links.`);
 console.log(`PASS: ${checks} additional differential and boundary checks against independent oracles.`);
+
+const coreChecks = verifyCore();
+console.log(`PASS: ${coreChecks} core-expansion differential and boundary checks.`);

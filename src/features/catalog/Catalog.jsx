@@ -107,8 +107,8 @@ export function Catalog({
             A curated library of independently authored interview exercises.
             Descriptions, examples, hints and approaches are saved here.
             Start with a focused collection or browse the full library.
-            The first release has 50 complete exercises; the broader catalog
-            will grow through reviewed additions. Related platform links may change.
+            There are {catalog.meta.total.toLocaleString()} complete exercises available.
+            The library grows through reviewed additions. Related platform links may change.
           </p>
           {catalog.meta.sources.map((source) => (
             <div key={source.id}>

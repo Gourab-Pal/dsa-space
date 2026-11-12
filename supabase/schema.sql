@@ -744,13 +744,19 @@ revoke all on function public.import_catalog_batch(jsonb,jsonb),public.publish_c
 grant execute on function public.import_catalog_batch(jsonb,jsonb),public.publish_catalog_release(text) to service_role;
 
 -- 14. SOURCE REGISTRY ONLY (NO BULK QUESTION SEED)
+-- Core release: all 11 source platforms. Existing content versions are unchanged.
 insert into public.catalog_sources(id,name,url,coverage,updated_on) values
  ('leetcode','LeetCode','https://leetcode.com/problemset/','Related practice links. Stored exercise text is independently authored.','2026-11-03'),
  ('gfg','GeeksforGeeks','https://www.geeksforgeeks.org/explore','Related practice links.','2026-11-03'),
  ('cses','CSES','https://cses.fi/problemset/','Related practice links; the DSA Space edition may use a different input format.','2026-11-03'),
  ('hackerrank','HackerRank','https://www.hackerrank.com/domains/algorithms','Related practice links.','2026-11-03'),
  ('interviewbit','InterviewBit','https://www.interviewbit.com/coding-interview-questions/','Related practice links.','2026-11-03'),
- ('code360','Code360','https://www.naukri.com/code360/problems','Curated related practice links; availability may vary.','2026-11-03')
+ ('code360','Code360','https://www.naukri.com/code360/problems','Curated related practice links; availability may vary.','2026-11-03'),
+ ('atcoder','AtCoder','https://atcoder.jp/contests/','Selected algorithm exercises; stored DSA Space text is independently authored.','2026-11-04'),
+ ('codechef','CodeChef','https://www.codechef.com/practice','Selected algorithm exercises; not the entire contest archive.','2026-11-04'),
+ ('spoj','SPOJ','https://www.spoj.com/problems/classical/','Selected classic practice references; source availability may vary.','2026-11-04'),
+ ('hackerearth','HackerEarth','https://www.hackerearth.com/practice/','Selected graph and interview practice references.','2026-11-04'),
+ ('codeforces','Codeforces','https://codeforces.com/problemset','Selected interview-relevant exercises, not the full contest archive.','2026-11-04')
  on conflict(id) do update set coverage=excluded.coverage,updated_on=excluded.updated_on;
 
 -- 15. ADMIN EXAMPLES (commented, never creates users automatically)
