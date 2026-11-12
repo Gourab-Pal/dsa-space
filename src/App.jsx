@@ -473,9 +473,7 @@ export function App({ onSignOut, workspace }) {
         useState(false);
     const [page, setPage] = useState(1);
 
-    const [selectedId, setSelectedId] = useState(
-        data.questions[0]?.id || null
-    );
+    const [selectedId, setSelectedId] = useState(null);
     const [detailTab, setDetailTab] = useState(
         "Notes"
     );
@@ -602,6 +600,7 @@ export function App({ onSignOut, workspace }) {
 
     function navigate(next) {
         setView(next);
+        setSelectedId(null);
         setTopic("All questions");
         setTab("All questions");
         setQuery("");
