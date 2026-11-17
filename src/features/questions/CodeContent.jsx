@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { Check, Code, Copy } from "@phosphor-icons/react";
+import { ArrowsOut, Check, Code, Copy } from "@phosphor-icons/react";
+import { CodeViewerModal } from "./CodeViewerModal.jsx";
 import {
   CODE_LANGUAGES, highlightCode, insertCodeFence, languageLabel,
   looksLikeCode, parseCodeNotes,
@@ -9,6 +10,7 @@ import "./code-content.css";
 function CodeBlock({ code, language = "auto" }) {
   const [chosen, setChosen] = useState(language);
   const [copyStatus, setCopyStatus] = useState("");
+  const [expanded, setExpanded] = useState(false);
   const copyTimer = useRef(null);
   useEffect(() => { setChosen(language); setCopyStatus(""); }, [code, language]);
   useEffect(() => () => clearTimeout(copyTimer.current), []);
@@ -23,25 +25,49 @@ function CodeBlock({ code, language = "auto" }) {
     copyTimer.current = setTimeout(() => setCopyStatus(""), 2500);
   }
 
-  return <section className="saved-code" aria-label="Saved code block">
-    <div className="saved-code-toolbar">
+  function renderToolbar(canExpand) {
+    return <div className="saved-code-toolbar">
       <select aria-label="Code language" value={chosen} onChange={(e) => setChosen(e.target.value)}>
         <option value="auto">Auto · {languageLabel(highlighted.language)}</option>
         {CODE_LANGUAGES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select>
-      <button type="button" onClick={copy} aria-label="Copy code">
-        {copyStatus === "Copied" ? <Check size={15} /> : <Copy size={15} />}
-        {copyStatus === "Copied" ? "Copied" : "Copy"}
-      </button>
-    </div>
-    <pre tabIndex={0} aria-label={`${languageLabel(highlighted.language)} code`}>
-      {highlighted.html !== null
-        ? <code className="hljs" dangerouslySetInnerHTML={{ __html: highlighted.html }} />
-        : <code>{code}</code>}
-    </pre>
-    <span className="code-copy-status" role="status">{copyStatus}</span>
-    {highlighted.limited && <small className="code-size-note">Large snippet shown as plain text.</small>}
-  </section>;
+      <div className="saved-code-tools">
+        {canExpand && <button type="button" onClick={() => setExpanded(true)}
+          aria-label="Expand code" title="Open large code viewer" aria-haspopup="dialog">
+          <ArrowsOut size={15} /> Expand
+        </button>}
+        <button type="button" onClick={copy} aria-label="Copy code">
+          {copyStatus === "Copied" ? <Check size={15} /> : <Copy size={15} />}
+          {copyStatus === "Copied" ? "Copied" : "Copy"}
+        </button>
+      </div>
+    </div>;
+  }
+
+  function renderCode() {
+    return <>
+      <pre tabIndex={0} aria-label={`${languageLabel(highlighted.language)} code`}>
+        {highlighted.html !== null
+          ? <code className="hljs" dangerouslySetInnerHTML={{ __html: highlighted.html }} />
+          : <code>{code}</code>}
+      </pre>
+      <span className="code-copy-status" role="status">{copyStatus}</span>
+      {highlighted.limited && <small className="code-size-note">Large snippet shown as plain text.</small>}
+    </>;
+  }
+
+  return <>
+    <section className="saved-code" aria-label="Saved code block">
+      {renderToolbar(true)}
+      {renderCode()}
+    </section>
+    {expanded && <CodeViewerModal onClose={() => setExpanded(false)}>
+      <section className="saved-code saved-code-expanded" aria-label="Expanded saved code">
+        {renderToolbar(false)}
+        {renderCode()}
+      </section>
+    </CodeViewerModal>}
+  </>;
 }
 
 export function NotesContent({ text = "", codeOnly = false }) {

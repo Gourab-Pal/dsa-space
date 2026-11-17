@@ -65,3 +65,48 @@
 .saved-code .hljs-params { color: #e4eaf2; }
 .saved-code .hljs-tag { color: #f3aaa5; }
 .saved-code .hljs-deletion { color: #ff9f9f; }
+
+.saved-code-tools { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+.saved-code-toolbar select { min-width: 0; }
+
+.code-viewer-modal {
+  position: fixed; inset: 0; margin: auto; padding: 0;
+  width: min(1200px, calc(100vw - 48px));
+  height: min(88dvh, 960px);
+  max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px);
+  border: 1px solid #36516c; border-radius: 12px;
+  background: #09121f; color: #e4eaf2;
+  box-shadow: 0 28px 100px #000a;
+  overflow: hidden; white-space: normal;
+}
+.code-viewer-modal[open] { display: flex; flex-direction: column; }
+.code-viewer-modal::backdrop { background: #020810d9; backdrop-filter: blur(3px); }
+.code-viewer-heading {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 15px 20px;
+  border-bottom: 1px solid #2b4058; background: #101e30; flex: 0 0 auto;
+}
+.code-viewer-heading h2 { margin: 0; font-size: 18px; line-height: 1.4; }
+.code-viewer-heading .icon-button { color: #c3d2e5; }
+.code-viewer-heading .icon-button:hover { color: #ff994b; }
+.code-viewer-body { flex: 1; min-height: 0; min-width: 0; display: flex; }
+.saved-code.saved-code-expanded {
+  display: flex; flex-direction: column; flex: 1;
+  min-height: 0; margin: 0; border: 0; border-radius: 0;
+}
+.saved-code-expanded .saved-code-toolbar { padding: 9px 16px; flex: 0 0 auto; }
+.saved-code-expanded .saved-code-toolbar select,
+.saved-code-expanded .saved-code-toolbar button { font-size: 12px; }
+.saved-code-expanded pre {
+  flex: 1; min-height: 0; max-height: none; padding: 22px;
+  font-size: 14px; line-height: 1.8; overscroll-behavior: contain;
+}
+.code-viewer-modal :focus-visible { outline: 2px solid #ff963c; outline-offset: -2px; }
+@media (max-width: 600px) {
+  .code-viewer-modal {
+    width: calc(100vw - 16px); height: calc(100dvh - 32px);
+    max-width: calc(100vw - 16px); max-height: calc(100dvh - 32px); border-radius: 8px;
+  }
+  .code-viewer-heading { padding: 12px 14px; }
+  .saved-code-expanded pre { padding: 16px; font-size: 13px; }
+}
