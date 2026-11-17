@@ -43,6 +43,7 @@ import { safeUrl, lastAttempt, streak, validateBackup } from "./features/questio
 import { QuestionContent } from "./features/catalog/QuestionContent.jsx";
 import { Catalog } from "./features/catalog/Catalog.jsx";
 import { addCatalogQuestions, LIBRARY_LIMIT } from "./features/catalog/catalogModel.js";
+import { CodeNotesEditor, NotesContent } from "./features/questions/CodeContent.jsx";
 
 const PAGE_SIZE = 8;
 
@@ -297,15 +298,7 @@ function Editor({
 
             {mode === "notes" && (
                 <>
-                    <Field label="My approach and notes">
-            <textarea
-                name="notes"
-                rows={5}
-                defaultValue={question.notes}
-                maxLength={100000}
-                autoFocus
-            />
-                    </Field>
+                    <CodeNotesEditor defaultValue={question.notes} />
 
                     <Field label="Solution / code">
             <textarea
@@ -2041,8 +2034,9 @@ export function App({ onSignOut, workspace }) {
                                             : ""
                                     }`}
                                 >
-                                    {selected.notes ||
-                                        "Capture your approach, mistakes, and key insights here."}
+                                    {selected.notes
+                                        ? <NotesContent key={selected.id} text={selected.notes} />
+                                        : "Capture your approach, mistakes, and key insights here."}
                                 </div>
 
                                 <details className="solution">
@@ -2051,13 +2045,7 @@ export function App({ onSignOut, workspace }) {
                                     </summary>
 
                                     {selected.solution ? (
-                                        <pre>
-                      <code>
-                        {
-                            selected.solution
-                        }
-                      </code>
-                    </pre>
+                                        <NotesContent key={selected.id} text={selected.solution} codeOnly />
                                     ) : (
                                         <p className="muted">
                                             Add a solution using
